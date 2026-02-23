@@ -12,20 +12,34 @@ namespace DataversePowerAutomateHelpers
         /*
         Input Parameters:
         | String | EntityLogicalName    | Required | The LogicalName of the entity that contains the attribute. |
-        | String | LogicalName | Required | The LogicalName of the attribute (or column) that contains the options.           |
+        | String | LogicalName | Optional | The LogicalName of the attribute (or column) that contains the options. If not provided, returns all option set attributes. |
 
 
         Output Parameters:
-        | EntityCollection | Options | A List of 'expando' entities where properties represent option properties|
+        | EntityCollection | Options | A collection containing a single expando entity with nested attribute structures|
 
-        'Expando entities' are entities with no LogicalName set. Expando entities do not need to map to any entity metadata.
-        
-        When returned using Web API they have this @odata.type value:
-
+        Response structure:
+        When LogicalName is provided (single attribute):
             {
-                "@odata.type": "#Microsoft.Dynamics.CRM.expando",
-                "value": 1,
-                "label": "Preferred Customer"
+                "Options": {
+                    "Red": 1,
+                    "Blue": 2,
+                    "Green": 3
+                }
+            }
+
+        When LogicalName is not provided (all attributes):
+            {
+                "Options": {
+                    "color": {
+                        "Red": 1,
+                        "Blue": 2
+                    },
+                    "size": {
+                        "Small": 1,
+                        "Large": 2
+                    }
+                }
             }
 
         */
@@ -33,119 +47,163 @@ namespace DataversePowerAutomateHelpers
 
         public void Execute(IServiceProvider serviceProvider)
         {
-            // Obtain the tracing service
-            var tracingService =
-            (ITracingService)serviceProvider.GetService(typeof(ITracingService));
-
-            // Obtain the execution context from the service provider.  
+            var tracingService = (ITracingService)serviceProvider.GetService(typeof(ITracingService));
             var context = (IPluginExecutionContext)serviceProvider.GetService(typeof(IPluginExecutionContext));
-
-            // Obtain the organization service reference which you will need for  web service calls.  
             var serviceFactory = (IOrganizationServiceFactory)serviceProvider.GetService(typeof(IOrganizationServiceFactory));
             var service = serviceFactory.CreateOrganizationService(context.UserId);
 
+            tracingService.Trace("RetrieveOptions plugin execution started.");
+
             try
             {
-
-                //Assign variables from context
-                string entityLogicalName = (string)context.InputParameters["EntityLogicalName"];
-                string logicalName = (string)context.InputParameters["LogicalName"];
-
-
-                //Compose the request
-                var req = new RetrieveAttributeRequest
+                tracingService.Trace("Reading input parameters...");
+                if (!context.InputParameters.Contains("EntityLogicalName"))
                 {
-                    EntityLogicalName = entityLogicalName,
-                    LogicalName = logicalName
-                };
-
-                tracingService.Trace($"Sending RetrieveAttributeRequest using values EntityLogicalName:{entityLogicalName}, LogicalName:{ logicalName}");
-                //Send the request
-                var response = (RetrieveAttributeResponse)service.Execute(req);
-                tracingService.Trace("RetrieveAttributeRequest call succeeded.");
-
-                //Define the EntityCollection to return
-                var options = new EntityCollection();
-
-                //Add expando entities to the collection based on the type of attribute.
-                switch (response.AttributeMetadata)
-                {
-                    case BooleanAttributeMetadata b:
-
-                        //True Option
-                        options.Entities.Add(new Entity()
-                        {
-                            Attributes = {
-                                { "value", b.OptionSet.TrueOption.Value},
-                                { "label", b.OptionSet.TrueOption.Label.UserLocalizedLabel.Label}
-                            }
-                        });
-
-                        //False Option
-                        options.Entities.Add(new Entity()
-                        {
-                            Attributes = {
-                                { "value", b.OptionSet.FalseOption.Value},
-                                { "label", b.OptionSet.FalseOption.Label.UserLocalizedLabel.Label}
-                            }
-                        });
-
-                        break;
-                    case MultiSelectPicklistAttributeMetadata m:
-                        m.OptionSet.Options.ToList().ForEach(o =>
-                        {
-                            var option = new Entity();
-                            option["value"] = o.Value;
-                            option["label"] = o.Label.UserLocalizedLabel.Label;
-                            options.Entities.Add(option);
-                        });
-                        break;
-                    case PicklistAttributeMetadata p:
-                        p.OptionSet.Options.ToList().ForEach(o =>
-                        {
-                            var option = new Entity();
-                            option["value"] = o.Value;
-                            option["label"] = o.Label.UserLocalizedLabel.Label;
-                            options.Entities.Add(option);
-                        });
-                        break;
-                    case StateAttributeMetadata se:
-                        se.OptionSet.Options.ToList().ForEach(o =>
-                        {
-                            var option = new Entity();
-                            option["value"] = o.Value;
-                            option["label"] = o.Label.UserLocalizedLabel.Label;
-                            //Special properties that only this type of attribute has
-                            option["defaultstatus"] = ((StateOptionMetadata)o).DefaultStatus;
-                            option["invariantname"] = ((StateOptionMetadata)o).InvariantName;
-                            options.Entities.Add(option);
-                        });
-                        break;
-                    case StatusAttributeMetadata su:
-                        su.OptionSet.Options.ToList().ForEach(o =>
-                        {
-                            var option = new Entity();
-                            option["value"] = o.Value;
-                            option["label"] = o.Label.UserLocalizedLabel.Label;
-                            //Special property that only this type of attribute has
-                            option["state"] = ((StatusOptionMetadata)o).State;
-                            options.Entities.Add(option);
-                        });
-                        break;
-                    default:
-                        throw new InvalidPluginExecutionException($"The {logicalName} attribute doesn't have options.");
-
+                    throw new InvalidPluginExecutionException("EntityLogicalName input parameter is required.");
                 }
 
-                context.OutputParameters["Options"] = options;
+                string entityLogicalName = (string)context.InputParameters["EntityLogicalName"];
+                string logicalName = context.InputParameters.Contains("LogicalName") ? (string)context.InputParameters["LogicalName"] : null;
+                
+                tracingService.Trace($"Input - EntityLogicalName: '{entityLogicalName}', LogicalName: '{logicalName ?? "(null - retrieve all)"}''");
 
-                tracingService.Trace("sample_RetrieveOptions completed.");
+                var options = new EntityCollection();
+                var optionsData = new Entity();
+
+                if (string.IsNullOrEmpty(logicalName))
+                {
+                    tracingService.Trace("LogicalName is null/empty - retrieving all option set attributes for the entity.");
+                    var entityMetadata = DataversePowerAutomateHelpers.Utility.GetEntityProperties(service, entityLogicalName, "Attributes");
+                    tracingService.Trace($"Retrieved entity metadata. Attribute count: {entityMetadata?.Attributes?.Length ?? 0}");
+                    foreach (var attribute in entityMetadata.Attributes)
+                    {
+                        if (attribute is PicklistAttributeMetadata p)
+                        {
+                            tracingService.Trace($"Processing PicklistAttributeMetadata: {p.LogicalName}, Options count: {p.OptionSet?.Options?.Count ?? 0}");
+                            var attributeOptions = new Entity();
+                            foreach (var o in p.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                attributeOptions[label] = o.Value.Value;
+                            }
+                            optionsData[p.LogicalName] = attributeOptions;
+                        }
+                        else if (attribute is MultiSelectPicklistAttributeMetadata m)
+                        {
+                            tracingService.Trace($"Processing MultiSelectPicklistAttributeMetadata: {m.LogicalName}, Options count: {m.OptionSet?.Options?.Count ?? 0}");
+                            var attributeOptions = new Entity();
+                            foreach (var o in m.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                attributeOptions[label] = o.Value.Value;
+                            }
+                            optionsData[m.LogicalName] = attributeOptions;
+                        }
+                        else if (attribute is BooleanAttributeMetadata b)
+                        {
+                            tracingService.Trace($"Processing BooleanAttributeMetadata: {b.LogicalName}");
+                            var attributeOptions = new Entity();
+                            var trueLabel = b.OptionSet.TrueOption.Label?.UserLocalizedLabel?.Label ?? "True";
+                            var falseLabel = b.OptionSet.FalseOption.Label?.UserLocalizedLabel?.Label ?? "False";
+                            attributeOptions[trueLabel] = b.OptionSet.TrueOption.Value;
+                            attributeOptions[falseLabel] = b.OptionSet.FalseOption.Value;
+                            optionsData[b.LogicalName] = attributeOptions;
+                        }
+                        else if (attribute is StateAttributeMetadata se)
+                        {
+                            tracingService.Trace($"Processing StateAttributeMetadata: {se.LogicalName}, Options count: {se.OptionSet?.Options?.Count ?? 0}");
+                            var attributeOptions = new Entity();
+                            foreach (var o in se.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                attributeOptions[label] = o.Value.Value;
+                            }
+                            optionsData[se.LogicalName] = attributeOptions;
+                        }
+                        else if (attribute is StatusAttributeMetadata su)
+                        {
+                            tracingService.Trace($"Processing StatusAttributeMetadata: {su.LogicalName}, Options count: {su.OptionSet?.Options?.Count ?? 0}");
+                            var attributeOptions = new Entity();
+                            foreach (var o in su.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                attributeOptions[label] = o.Value.Value;
+                            }
+                            optionsData[su.LogicalName] = attributeOptions;
+                        }
+                    }
+                    tracingService.Trace($"Finished processing all attributes. Total attributes with options: {optionsData.Attributes.Count}");
+                    options.Entities.Add(optionsData);
+                }
+                else
+                {
+                    tracingService.Trace($"Retrieving single attribute: {logicalName}");
+                    var req = new RetrieveAttributeRequest
+                    {
+                        EntityLogicalName = entityLogicalName,
+                        LogicalName = logicalName
+                    };
+
+                    tracingService.Trace($"Sending RetrieveAttributeRequest using values EntityLogicalName:{entityLogicalName}, LogicalName:{logicalName}");
+                    var response = (RetrieveAttributeResponse)service.Execute(req);
+                    tracingService.Trace($"RetrieveAttributeRequest call succeeded. AttributeType: {response.AttributeMetadata?.AttributeType}");
+
+                    switch (response.AttributeMetadata)
+                    {
+                        case BooleanAttributeMetadata b:
+                            tracingService.Trace($"Processing Boolean attribute: {b.LogicalName}");
+                            var trueLabel = b.OptionSet.TrueOption.Label?.UserLocalizedLabel?.Label ?? "True";
+                            var falseLabel = b.OptionSet.FalseOption.Label?.UserLocalizedLabel?.Label ?? "False";
+                            optionsData[trueLabel] = b.OptionSet.TrueOption.Value;
+                            optionsData[falseLabel] = b.OptionSet.FalseOption.Value;
+                            break;
+                        case MultiSelectPicklistAttributeMetadata m:
+                            tracingService.Trace($"Processing MultiSelectPicklist attribute: {m.LogicalName}, Options count: {m.OptionSet?.Options?.Count ?? 0}");
+                            foreach (var o in m.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                optionsData[label] = o.Value.Value;
+                            }
+                            break;
+                        case PicklistAttributeMetadata p:
+                            tracingService.Trace($"Processing Picklist attribute: {p.LogicalName}, Options count: {p.OptionSet?.Options?.Count ?? 0}");
+                            foreach (var o in p.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                optionsData[label] = o.Value.Value;
+                            }
+                            break;
+                        case StateAttributeMetadata se:
+                            tracingService.Trace($"Processing State attribute: {se.LogicalName}, Options count: {se.OptionSet?.Options?.Count ?? 0}");
+                            foreach (var o in se.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                optionsData[label] = o.Value.Value;
+                            }
+                            break;
+                        case StatusAttributeMetadata su:
+                            tracingService.Trace($"Processing Status attribute: {su.LogicalName}, Options count: {su.OptionSet?.Options?.Count ?? 0}");
+                            foreach (var o in su.OptionSet.Options)
+                            {
+                                var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
+                                optionsData[label] = o.Value.Value;
+                            }
+                            break;
+                        default:
+                            throw new InvalidPluginExecutionException($"The {logicalName} attribute doesn't have options.");
+                    }
+                    tracingService.Trace($"Finished processing single attribute. Total options collected: {optionsData.Attributes.Count}");
+                    options.Entities.Add(optionsData);
+                }
+
+                tracingService.Trace($"Setting output parameter 'Options' with nested structure containing {options.Entities.Count} entity.");
+                context.OutputParameters["Options"] = options;
+                tracingService.Trace("RetrieveOptions plugin execution completed successfully.");
             }
             catch (FaultException<OrganizationServiceFault> ex)
             {
                 throw new InvalidPluginExecutionException($"An error occurred in sample_RetrieveOptions: {ex.Message}", ex);
             }
-
             catch (Exception ex)
             {
                 tracingService.Trace("sample_RetrieveOptions: {0}", ex.ToString());
