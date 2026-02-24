@@ -2,8 +2,10 @@
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
+using System.Text.Json;
 
 namespace DataversePowerAutomateHelpers
 {
@@ -16,7 +18,7 @@ namespace DataversePowerAutomateHelpers
 
 
         Output Parameters:
-        | EntityCollection | Options | A collection containing a single expando entity with nested attribute structures|
+        | String | Options | A JSON string containing the options as a key-value map|
 
         Response structure:
         When LogicalName is provided (single attribute):
@@ -67,12 +69,12 @@ namespace DataversePowerAutomateHelpers
                 
                 tracingService.Trace($"Input - EntityLogicalName: '{entityLogicalName}', LogicalName: '{logicalName ?? "(null - retrieve all)"}''");
 
-                var options = new EntityCollection();
-                var optionsData = new Entity();
+                object optionsData;
 
                 if (string.IsNullOrEmpty(logicalName))
                 {
                     tracingService.Trace("LogicalName is null/empty - retrieving all option set attributes for the entity.");
+                    var allOptionsData = new Dictionary<string, Dictionary<string, int?>>();
                     var entityMetadata = DataversePowerAutomateHelpers.Utility.GetEntityProperties(service, entityLogicalName, "Attributes");
                     tracingService.Trace($"Retrieved entity metadata. Attribute count: {entityMetadata?.Attributes?.Length ?? 0}");
                     foreach (var attribute in entityMetadata.Attributes)
@@ -80,60 +82,60 @@ namespace DataversePowerAutomateHelpers
                         if (attribute is PicklistAttributeMetadata p)
                         {
                             tracingService.Trace($"Processing PicklistAttributeMetadata: {p.LogicalName}, Options count: {p.OptionSet?.Options?.Count ?? 0}");
-                            var attributeOptions = new Entity();
+                            var attributeOptions = new Dictionary<string, int?>();
                             foreach (var o in p.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
                                 attributeOptions[label] = o.Value.Value;
                             }
-                            optionsData[p.LogicalName] = attributeOptions;
+                            allOptionsData[p.LogicalName] = attributeOptions;
                         }
                         else if (attribute is MultiSelectPicklistAttributeMetadata m)
                         {
                             tracingService.Trace($"Processing MultiSelectPicklistAttributeMetadata: {m.LogicalName}, Options count: {m.OptionSet?.Options?.Count ?? 0}");
-                            var attributeOptions = new Entity();
+                            var attributeOptions = new Dictionary<string, int?>();
                             foreach (var o in m.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
                                 attributeOptions[label] = o.Value.Value;
                             }
-                            optionsData[m.LogicalName] = attributeOptions;
+                            allOptionsData[m.LogicalName] = attributeOptions;
                         }
                         else if (attribute is BooleanAttributeMetadata b)
                         {
                             tracingService.Trace($"Processing BooleanAttributeMetadata: {b.LogicalName}");
-                            var attributeOptions = new Entity();
+                            var attributeOptions = new Dictionary<string, int?>();
                             var trueLabel = b.OptionSet.TrueOption.Label?.UserLocalizedLabel?.Label ?? "True";
                             var falseLabel = b.OptionSet.FalseOption.Label?.UserLocalizedLabel?.Label ?? "False";
                             attributeOptions[trueLabel] = b.OptionSet.TrueOption.Value;
                             attributeOptions[falseLabel] = b.OptionSet.FalseOption.Value;
-                            optionsData[b.LogicalName] = attributeOptions;
+                            allOptionsData[b.LogicalName] = attributeOptions;
                         }
                         else if (attribute is StateAttributeMetadata se)
                         {
                             tracingService.Trace($"Processing StateAttributeMetadata: {se.LogicalName}, Options count: {se.OptionSet?.Options?.Count ?? 0}");
-                            var attributeOptions = new Entity();
+                            var attributeOptions = new Dictionary<string, int?>();
                             foreach (var o in se.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
                                 attributeOptions[label] = o.Value.Value;
                             }
-                            optionsData[se.LogicalName] = attributeOptions;
+                            allOptionsData[se.LogicalName] = attributeOptions;
                         }
                         else if (attribute is StatusAttributeMetadata su)
                         {
                             tracingService.Trace($"Processing StatusAttributeMetadata: {su.LogicalName}, Options count: {su.OptionSet?.Options?.Count ?? 0}");
-                            var attributeOptions = new Entity();
+                            var attributeOptions = new Dictionary<string, int?>();
                             foreach (var o in su.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
                                 attributeOptions[label] = o.Value.Value;
                             }
-                            optionsData[su.LogicalName] = attributeOptions;
+                            allOptionsData[su.LogicalName] = attributeOptions;
                         }
                     }
-                    tracingService.Trace($"Finished processing all attributes. Total attributes with options: {optionsData.Attributes.Count}");
-                    options.Entities.Add(optionsData);
+                    tracingService.Trace($"Finished processing all attributes. Total attributes with options: {allOptionsData.Count}");
+                    optionsData = allOptionsData;
                 }
                 else
                 {
@@ -148,21 +150,22 @@ namespace DataversePowerAutomateHelpers
                     var response = (RetrieveAttributeResponse)service.Execute(req);
                     tracingService.Trace($"RetrieveAttributeRequest call succeeded. AttributeType: {response.AttributeMetadata?.AttributeType}");
 
+                    var singleAttributeOptions = new Dictionary<string, int?>();
                     switch (response.AttributeMetadata)
                     {
                         case BooleanAttributeMetadata b:
                             tracingService.Trace($"Processing Boolean attribute: {b.LogicalName}");
                             var trueLabel = b.OptionSet.TrueOption.Label?.UserLocalizedLabel?.Label ?? "True";
                             var falseLabel = b.OptionSet.FalseOption.Label?.UserLocalizedLabel?.Label ?? "False";
-                            optionsData[trueLabel] = b.OptionSet.TrueOption.Value;
-                            optionsData[falseLabel] = b.OptionSet.FalseOption.Value;
+                            singleAttributeOptions[trueLabel] = b.OptionSet.TrueOption.Value;
+                            singleAttributeOptions[falseLabel] = b.OptionSet.FalseOption.Value;
                             break;
                         case MultiSelectPicklistAttributeMetadata m:
                             tracingService.Trace($"Processing MultiSelectPicklist attribute: {m.LogicalName}, Options count: {m.OptionSet?.Options?.Count ?? 0}");
                             foreach (var o in m.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
-                                optionsData[label] = o.Value.Value;
+                                singleAttributeOptions[label] = o.Value.Value;
                             }
                             break;
                         case PicklistAttributeMetadata p:
@@ -170,7 +173,7 @@ namespace DataversePowerAutomateHelpers
                             foreach (var o in p.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
-                                optionsData[label] = o.Value.Value;
+                                singleAttributeOptions[label] = o.Value.Value;
                             }
                             break;
                         case StateAttributeMetadata se:
@@ -178,7 +181,7 @@ namespace DataversePowerAutomateHelpers
                             foreach (var o in se.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
-                                optionsData[label] = o.Value.Value;
+                                singleAttributeOptions[label] = o.Value.Value;
                             }
                             break;
                         case StatusAttributeMetadata su:
@@ -186,18 +189,19 @@ namespace DataversePowerAutomateHelpers
                             foreach (var o in su.OptionSet.Options)
                             {
                                 var label = o.Label?.UserLocalizedLabel?.Label ?? string.Empty;
-                                optionsData[label] = o.Value.Value;
+                                singleAttributeOptions[label] = o.Value.Value;
                             }
                             break;
                         default:
                             throw new InvalidPluginExecutionException($"The {logicalName} attribute doesn't have options.");
                     }
-                    tracingService.Trace($"Finished processing single attribute. Total options collected: {optionsData.Attributes.Count}");
-                    options.Entities.Add(optionsData);
+                    tracingService.Trace($"Finished processing single attribute. Total options collected: {singleAttributeOptions.Count}");
+                    optionsData = singleAttributeOptions;
                 }
 
-                tracingService.Trace($"Setting output parameter 'Options' with nested structure containing {options.Entities.Count} entity.");
-                context.OutputParameters["Options"] = options;
+                var jsonOptions = JsonSerializer.Serialize(optionsData);
+                tracingService.Trace($"Serialized options to JSON. Length: {jsonOptions.Length}");
+                context.OutputParameters["Options"] = jsonOptions;
                 tracingService.Trace("RetrieveOptions plugin execution completed successfully.");
             }
             catch (FaultException<OrganizationServiceFault> ex)
