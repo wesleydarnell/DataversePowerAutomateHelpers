@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Options">
+  <description default="A JSON string containing the options as a key-value map">
+    <label description="A JSON string containing the options as a key-value map" languagecode="1033" />
+  </description>
+  <displayname default="Options">
+    <label description="Options" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>RetrieveOptions.Options</name>
+  <type>10</type>
+</customapiresponseproperty>

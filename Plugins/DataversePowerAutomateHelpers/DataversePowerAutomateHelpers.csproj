@@ -37,6 +37,9 @@
     <AssemblyOriginatorKeyFile>DataversePowerAutomateHelpers.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="HtmlAgilityPack, Version=1.12.4.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>packages\HtmlAgilityPack.1.12.4\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
@@ -95,6 +98,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExtractHtml.cs" />
     <Compile Include="AddToQueue.cs" />
     <Compile Include="AddUserToRecordTeam.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -105,6 +109,11 @@
     <None Include="app.config" />
     <None Include="DataversePowerAutomateHelpers.snk" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapi.xml" />
+    <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapirequestparameters\HtmlString\customapirequestparameter.xml" />
+    <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapirequestparameters\XPathSelector\customapirequestparameter.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
