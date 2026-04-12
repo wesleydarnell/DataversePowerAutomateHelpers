@@ -348,3 +348,4 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+/Solutions/UnManaged/1.0.0.2/DataversePowerAutomateHelpers_1_0_0_2.zip
