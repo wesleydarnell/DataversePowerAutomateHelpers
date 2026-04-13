@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="HtmlString">
+  <description default="The resulting HTML string after processing with the provided selector">
+    <label description="The resulting HTML string after processing with the provided selector" languagecode="1033" />
+  </description>
+  <displayname default="Html String">
+    <label description="Html String" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>ExtractHtml.HtmlString</name>
+  <type>10</type>
+</customapiresponseproperty>

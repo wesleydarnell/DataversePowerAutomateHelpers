@@ -12,7 +12,8 @@ Below is a list of the available APIs:
 
 - [sample_AddToQueue](#sample_addtoqueue)
 - [sample_AddUserToRecordTeam](#sample_AddUserToRecordTeam)
-- [sample_RetrieveOptions](#sample_RetrieveOptions)
+- [sample_ExtractHtml](#sample_ExtractHtml) *(Added in 1.0.0.6)*
+- [sample_RetrieveOptions](#sample_RetrieveOptions) *(Updated in 1.0.0.5)*
 
 If there are other Actions you want to use but are not able to, please open an issue for this GitHub repo.
 
@@ -69,7 +70,53 @@ There are a lot of unneeded fields about the team template, when all that is nee
 
 ![sample_AddUserToRecordTeam](media/sample_AddUserToRecordTeam.png)
 
+## sample_ExtractHtml
+
+*Added in version 1.0.0.6*
+
+This Custom API extracts HTML content using XPath selectors. It allows you to target specific elements within an HTML string and return either the element with its children or just the inner content. Main use case is unwrapping the default rich text editor's html wrapper that is added.
+
+### Input Parameters
+
+|Name|Type|Description|Is Required|
+|--|--|--|--|
+|HtmlString|String|The input HTML string to process|Yes|
+|XPathSelector|String|The XPath selector for the intended element (e.g. `//div[@class='ck-content']`)|Yes|
+|ReturnSelectorElementAndChildren|Boolean|If true, returns the matched element and all its children (OuterHtml). If false, returns only the inner content of the matched element (InnerHtml). Default: false|Yes|
+
+### Output Parameters
+
+|Name|Type|Description|
+|--|--|--|
+|Success|Boolean|Indicates whether a matching element was found. Returns false if the selector doesn't match any element.|
+|HtmlString|String|The resulting HTML string. If the selector is not found, the original HTML string is returned.|
+
+### Example
+
+**Request**
+
+```http
+POST {{webapiurl}}sample_ExtractHtml
+
+{
+    "HtmlString": "<html><body><div class='content'><p>Hello World</p></div></body></html>",
+    "XPathSelector": "//div[@class='content']",
+    "ReturnSelectorElementAndChildren": false
+}
+```
+
+**Response**
+
+```json
+{
+    "Success": true,
+    "HtmlString": "<p>Hello World</p>"
+}
+```
+
 ## sample_RetrieveOptions
+
+*Updated in version 1.0.0.5 - Now returns a JSON object instead of EntityCollection*
 
 This Custom API addresses the need that many people have expressed to be able to retrieve the valid options for a given entity attribute. The Web API doesn't expose the equivalent to the [RetrieveOptionSet message](https://docs.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.messages.retrieveoptionsetrequest?view=dynamics-general-ce-9) found in the SDK. But even this message is limited in capability because it only returns information about Global optionsets. There are many 'local' optionsets which are not defined globally.
 
@@ -90,24 +137,48 @@ More information [Query metadata using the Web API > Retrieving attributes](http
 
 What a Power Automate user expects is a simple way to retrieve the valid options without a lot of complexity. This Custom API provides this by requiring just two string values:
 
-|Name|Type|Description|Is Required
+### Input Parameters
+
+|Name|Type|Description|Is Required|
 |--|--|--|--|
 |EntityLogicalName|String|The LogicalName of the entity that contains the attribute.|Yes|
-|LogicalName|String|The LogicalName of the attribute that contains the options. |Yes|
+|LogicalName|String|The LogicalName of the attribute that contains the options. If not provided, returns all option set attributes for the entity.|No|
+
+### Output Parameters
+
+|Name|Type|Description|
+|--|--|--|
+|Options|String|A JSON string containing the options as a label-to-value map|
 
 ![RetrieveOptions](media/sample_RetrieveOptions.png)
 
-This Custom API uses an `EntityCollection` return type. The Web API definition for the action looks like this:
+### Response Structure
 
-```xml
-<Action Name="sample_RetrieveOptions">
-    <Parameter Name="EntityLogicalName" Type="Edm.String" Nullable="false" Unicode="false" />
-    <Parameter Name="LogicalName" Type="Edm.String" Nullable="false" Unicode="false" />
-    <ReturnType Type="Collection(mscrm.crmbaseentity)" Nullable="false" />
-</Action>
+When `LogicalName` is provided (single attribute):
+
+```json
+{
+    "Preferred Customer": 1,
+    "Standard": 2
+}
 ```
 
-If you call the `sample_RetrieveOptions` action from PostMan, you can see the type of response expected:
+When `LogicalName` is not provided (all option set attributes for the entity):
+
+```json
+{
+    "accountcategorycode": {
+        "Preferred Customer": 1,
+        "Standard": 2
+    },
+    "statuscode": {
+        "Active": 1,
+        "Inactive": 2
+    }
+}
+```
+
+### Example
 
 **Request**
 
@@ -115,36 +186,21 @@ If you call the `sample_RetrieveOptions` action from PostMan, you can see the ty
 POST {{webapiurl}}sample_RetrieveOptions
 
 {
-    "EntityLogicalName" : "account",
-    "LogicalName":"accountcategorycode"
+    "EntityLogicalName": "account",
+    "LogicalName": "accountcategorycode"
 }
 ```
-
 
 **Response Body**
 
 ```json
 {
-    "@odata.context": "{{webapiurl}}$metadata#expando",
-    "value": [
-        {
-            "@odata.type": "#Microsoft.Dynamics.CRM.expando",
-            "value": 1,
-            "label": "Preferred Customer"
-        },
-        {
-            "@odata.type": "#Microsoft.Dynamics.CRM.expando",
-            "value": 2,
-            "label": "Standard"
-        }
-    ]
+    "@odata.context": "{{webapiurl}}$metadata#Microsoft.Dynamics.CRM.sample_RetrieveOptionsResponse",
+    "Options": "{\"Preferred Customer\":1,\"Standard\":2}"
 }
 ```
 
-This JSON data is what is returned by Power Automate:
-
-
-![RetrieveOptionsResults](media/sample_RetrieveOptionsResults.png)
+The `Options` value is a JSON string that can be parsed in Power Automate using the `json()` function to access the option values by their labels.
 
 
 
