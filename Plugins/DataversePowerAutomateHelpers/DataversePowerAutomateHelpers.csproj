@@ -116,4 +116,13 @@
     <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapirequestparameters\XPathSelector\customapirequestparameter.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="ILRepack" AfterTargets="Build">
+    <PropertyGroup>
+      <ILRepackPath>$(ProjectDir)packages\ILRepack.2.0.34\tools\ILRepack.exe</ILRepackPath>
+      <TempAssembly>$(TargetDir)$(TargetName).temp.dll</TempAssembly>
+    </PropertyGroup>
+    <Move SourceFiles="$(TargetPath)" DestinationFiles="$(TempAssembly)" />
+    <Exec Command="&quot;$(ILRepackPath)&quot; /keyfile:&quot;$(ProjectDir)DataversePowerAutomateHelpers.snk&quot; /out:&quot;$(TargetPath)&quot; &quot;$(TempAssembly)&quot; &quot;$(TargetDir)HtmlAgilityPack.dll&quot;" />
+    <Delete Files="$(TempAssembly)" />
+  </Target>
 </Project>
