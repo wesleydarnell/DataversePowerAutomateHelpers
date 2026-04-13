@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="HtmlString">
+  <description default="The input HTML string to process">
+    <label description="The input HTML string to process" languagecode="1033" />
+  </description>
+  <displayname default="Html String">
+    <label description="Html String" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>0</isoptional>
+  <name>ExtractHtml.HtmlString</name>
+  <type>10</type>
+</customapirequestparameter>
