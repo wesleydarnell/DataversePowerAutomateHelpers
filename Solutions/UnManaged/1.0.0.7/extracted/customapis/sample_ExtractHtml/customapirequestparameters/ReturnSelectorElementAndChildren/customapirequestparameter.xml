@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="ReturnSelectorElementAndChildren">
+  <description default="If true, returns the matched element and all its children. If false, returns only the inner content of the matched element.">
+    <label description="If true, returns the matched element and all its children. If false, returns only the inner content of the matched element." languagecode="1033" />
+  </description>
+  <displayname default="Return Selector Element And Children">
+    <label description="Return Selector Element And Children" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>0</isoptional>
+  <name>ExtractHtml.ReturnSelectorElementAndChildren</name>
+  <type>0</type>
+</customapirequestparameter>

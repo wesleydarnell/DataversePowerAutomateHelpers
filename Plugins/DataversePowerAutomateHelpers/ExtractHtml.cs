@@ -20,7 +20,7 @@ namespace DataversePowerAutomateHelpers
 
         Output Parameters:
         | Boolean | Success    | Indicates whether the operation was successful
-        | String  | HtmlString | The resulting Html string after processing with the provided selector. If the selector is not found, the original Html string will be returned.
+        | String|null  | HtmlString | The resulting Html string after processing with the provided selector. If the selector is not found, the original Html string will be returned.
         */
 
         public void Execute(IServiceProvider serviceProvider)
@@ -37,7 +37,10 @@ namespace DataversePowerAutomateHelpers
 
                 if (!context.InputParameters.Contains("HtmlString") || string.IsNullOrEmpty((string)context.InputParameters["HtmlString"]))
                 {
-                    throw new InvalidPluginExecutionException("HtmlString input parameter is required.");
+                    tracingService.Trace("HtmlString not provided. Returning success with null.");
+                    context.OutputParameters["Success"] = true;
+                    context.OutputParameters["HtmlString"] = null;
+                    return;
                 }
 
                 if (!context.InputParameters.Contains("XPathSelector") || string.IsNullOrEmpty((string)context.InputParameters["XPathSelector"]))

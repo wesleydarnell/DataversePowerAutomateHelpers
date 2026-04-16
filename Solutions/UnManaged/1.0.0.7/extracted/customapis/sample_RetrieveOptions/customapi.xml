@@ -1,0 +1,18 @@
+<customapi uniquename="sample_RetrieveOptions">
+  <allowedcustomprocessingsteptype>0</allowedcustomprocessingsteptype>
+  <bindingtype>0</bindingtype>
+  <description default="Retrieves the options for a specific attribute that has them">
+    <label description="Retrieves the options for a specific attribute that has them" languagecode="1033" />
+  </description>
+  <displayname default="Retrieve Options">
+    <label description="Retrieve Options" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isfunction>0</isfunction>
+  <isprivate>0</isprivate>
+  <name>RetrieveOptions</name>
+  <plugintypeid>
+    <plugintypeexportkey>7fbc50a6-6be4-4ae0-ba5d-e907b8c85a23</plugintypeexportkey>
+  </plugintypeid>
+  <workflowsdkstepenabled>0</workflowsdkstepenabled>
+</customapi>

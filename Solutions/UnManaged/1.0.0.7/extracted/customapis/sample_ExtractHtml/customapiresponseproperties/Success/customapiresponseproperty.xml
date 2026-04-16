@@ -1,0 +1,11 @@
+<customapiresponseproperty uniquename="Success">
+  <description default="Indicates whether a matching element was found">
+    <label description="Indicates whether a matching element was found" languagecode="1033" />
+  </description>
+  <displayname default="Success">
+    <label description="Success" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <name>ExtractHtml.Success</name>
+  <type>0</type>
+</customapiresponseproperty>
