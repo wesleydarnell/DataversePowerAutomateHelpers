@@ -13,7 +13,7 @@ Below is a list of the available APIs:
 - [sample_AddToQueue](#sample_addtoqueue)
 - [sample_AddUserToRecordTeam](#sample_AddUserToRecordTeam)
 - [sample_ExtractHtml](#sample_ExtractHtml) *(Added in 1.0.0.6)*
-- [sample_RetrieveOptions](#sample_RetrieveOptions) *(Updated in 1.0.0.5)*
+- [sample_RetrieveOptions](#sample_RetrieveOptions) *(Updated in 1.0.0.8)*
 
 If there are other Actions you want to use but are not able to, please open an issue for this GitHub repo.
 
@@ -116,6 +116,7 @@ POST {{webapiurl}}sample_ExtractHtml
 
 ## sample_RetrieveOptions
 
+*Updated in version 1.0.0.8 - Added ValueAsKey parameter*
 *Updated in version 1.0.0.5 - Now returns a JSON object instead of EntityCollection*
 
 This Custom API addresses the need that many people have expressed to be able to retrieve the valid options for a given entity attribute. The Web API doesn't expose the equivalent to the [RetrieveOptionSet message](https://docs.microsoft.com/en-us/dotnet/api/microsoft.xrm.sdk.messages.retrieveoptionsetrequest?view=dynamics-general-ce-9) found in the SDK. But even this message is limited in capability because it only returns information about Global optionsets. There are many 'local' optionsets which are not defined globally.
@@ -143,6 +144,7 @@ What a Power Automate user expects is a simple way to retrieve the valid options
 |--|--|--|--|
 |EntityLogicalName|String|The LogicalName of the entity that contains the attribute.|Yes|
 |LogicalName|String|The LogicalName of the attribute that contains the options. If not provided, returns all option set attributes for the entity.|No|
+|ValueAsKey|Boolean|When true, flips the key-value pairs to use the numeric value as the key and the label text as the value. Default: false|No|
 
 ### Output Parameters
 
@@ -154,7 +156,7 @@ What a Power Automate user expects is a simple way to retrieve the valid options
 
 ### Response Structure
 
-When `LogicalName` is provided (single attribute):
+When `LogicalName` is provided (single attribute) and `ValueAsKey` is false (default):
 
 ```json
 {
@@ -163,7 +165,16 @@ When `LogicalName` is provided (single attribute):
 }
 ```
 
-When `LogicalName` is not provided (all option set attributes for the entity):
+When `LogicalName` is provided (single attribute) and `ValueAsKey` is true:
+
+```json
+{
+    "1": "Preferred Customer",
+    "2": "Standard"
+}
+```
+
+When `LogicalName` is not provided (all option set attributes for the entity) and `ValueAsKey` is false (default):
 
 ```json
 {
@@ -174,6 +185,21 @@ When `LogicalName` is not provided (all option set attributes for the entity):
     "statuscode": {
         "Active": 1,
         "Inactive": 2
+    }
+}
+```
+
+When `LogicalName` is not provided (all option set attributes for the entity) and `ValueAsKey` is true:
+
+```json
+{
+    "accountcategorycode": {
+        "1": "Preferred Customer",
+        "2": "Standard"
+    },
+    "statuscode": {
+        "1": "Active",
+        "2": "Inactive"
     }
 }
 ```

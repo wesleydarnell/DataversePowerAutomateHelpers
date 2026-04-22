@@ -1,0 +1,12 @@
+<customapirequestparameter uniquename="ValueAsKey">
+  <description default="When true, flips the key-value pairs to use the numeric value as the key and the label text as the value.">
+    <label description="When true, flips the key-value pairs to use the numeric value as the key and the label text as the value." languagecode="1033" />
+  </description>
+  <displayname default="Value As Key">
+    <label description="Value As Key" languagecode="1033" />
+  </displayname>
+  <iscustomizable>1</iscustomizable>
+  <isoptional>1</isoptional>
+  <name>RetrieveOptions.ValueAsKey</name>
+  <type>0</type>
+</customapirequestparameter>
