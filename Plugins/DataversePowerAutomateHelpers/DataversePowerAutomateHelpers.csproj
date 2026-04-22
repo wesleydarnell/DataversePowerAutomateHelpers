@@ -111,9 +111,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapi.xml" />
-    <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapirequestparameters\HtmlString\customapirequestparameter.xml" />
-    <Content Include="Solutions\UnManaged\1.0.0.6\extracted\customapis\sample_ExtractHtml\customapirequestparameters\XPathSelector\customapirequestparameter.xml" />
+    <Content Include="Solutions\UnManaged\1.0.0.8\extracted\customapis\sample_ExtractHtml\customapi.xml" />
+    <Content Include="Solutions\UnManaged\1.0.0.8\extracted\customapis\sample_ExtractHtml\customapirequestparameters\HtmlString\customapirequestparameter.xml" />
+    <Content Include="Solutions\UnManaged\1.0.0.8\extracted\customapis\sample_ExtractHtml\customapirequestparameters\XPathSelector\customapirequestparameter.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="ILRepack" AfterTargets="Build">
